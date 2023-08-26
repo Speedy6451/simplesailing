@@ -1,34 +1,55 @@
+var ctx;
+var image;
+var memory;
+const width = 256;
+const height = 224;
+
+function blit_frame() {
+    ctx.putImageData(image, 0, 0);
+}
+
+function blit_text(text, len, x, y, size) {
+    let decoded = (new TextDecoder())
+        .decode(new Uint8Array(memory.buffer, text, len));
+    ctx.font = size +'vh serif'
+    ctx.fillText(decoded,x,y);
+}
+
 async function init() {
-    const { instance } = await WebAssembly.instantiateStreaming(
-        fetch("./index.wasm")
-    );
-
-    const width = 600;
-    const height = 600;
-
     const canvas = document.getElementById("window");
     canvas.width = width;
     canvas.height = height;
 
+    ctx = canvas.getContext("2d");
+
+    const { instance } = await WebAssembly.instantiateStreaming(
+        fetch("./index.wasm"),
+        {
+            "env" : {
+                "js_sin": Math.sin,
+                "blit_frame": blit_frame,
+                "blit_text": blit_text,
+            },
+        }
+    );
+
+    memory = instance.exports.memory
     const buffer_address = instance.exports.BUFFER.value;
-    const image = new ImageData(
+    image = new ImageData(
         new Uint8ClampedArray(
-            instance.exports.memory.buffer,
+            memory.buffer,
             buffer_address,
             4 * width * height,
         ),
         width,
     );
 
-    const ctx = canvas.getContext("2d");
+    instance.exports.frame_entry();
+    ctx.textBaseline = 'top'
+    ctx.textAlign = 'left';
 
     const render = () => {
         instance.exports.frame_entry();
-        ctx.putImageData(image, 0, 0);
-        ctx.font = '84px sans-serif'
-        ctx.textBaseline = 'top'
-        ctx.textAlign = 'left';
-        ctx.fillText("demo",12,12);
 
         requestAnimationFrame(render);
     }

@@ -7,8 +7,22 @@ fn handle_panic(_: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 
-const WIDTH: usize = 600;
-const HEIGHT: usize = 600;
+extern {
+    fn blit_frame();
+    fn blit_text(text: *const u8, len: u32, x: i32, y: i32, size: u8);
+}
+
+fn draw_text(text: &str, x: i32, y: i32, size: u8) {
+    unsafe {
+        blit_text(
+            (*text).as_ptr(),
+            text.len() as u32,
+            x, y, size)
+    }
+}
+
+const WIDTH: usize = 256;
+const HEIGHT: usize = 224;
 
 #[no_mangle]
 static mut BUFFER: [u32; WIDTH * HEIGHT] = [0; WIDTH * HEIGHT];
@@ -28,6 +42,9 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
             buffer[y*WIDTH + x] = frame.wrapping_add((x^y) as u32) | 0xFF000000;
         }
     }
+    unsafe { blit_frame(); }
+
+    draw_text("hi from rust", 0,100,1);
 }
 
 #[cfg(test)]
