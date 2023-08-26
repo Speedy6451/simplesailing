@@ -1,5 +1,33 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+#![no_std]
+
+use core::sync::atomic::{AtomicU32, Ordering};
+
+#[panic_handler]
+fn handle_panic(_: &core::panic::PanicInfo) -> ! {
+    loop {}
+}
+
+const WIDTH: usize = 600;
+const HEIGHT: usize = 600;
+
+#[no_mangle]
+static mut BUFFER: [u32; WIDTH * HEIGHT] = [0; WIDTH * HEIGHT];
+
+static FRAME: AtomicU32 = AtomicU32::new(0);
+
+#[no_mangle]
+pub unsafe extern fn frame_entry() {
+    // calling from multiple threads is ub
+    render_frame(&mut BUFFER)
+}
+
+fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
+    let frame = FRAME.fetch_add(1, Ordering::Relaxed);
+    for y in 0..HEIGHT {
+        for x in 0..WIDTH {
+            buffer[y*WIDTH + x] = frame.wrapping_add((x^y) as u32) | 0xFF000000;
+        }
+    }
 }
 
 #[cfg(test)]
@@ -8,7 +36,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+        let result = number();
+        assert_eq!(result, 64);
     }
 }
