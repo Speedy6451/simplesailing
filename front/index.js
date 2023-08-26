@@ -25,6 +25,10 @@ async function init() {
     const render = () => {
         instance.exports.frame_entry();
         ctx.putImageData(image, 0, 0);
+        ctx.font = '84px sans-serif'
+        ctx.textBaseline = 'top'
+        ctx.textAlign = 'left';
+        ctx.fillText("demo",12,12);
 
         requestAnimationFrame(render);
     }
