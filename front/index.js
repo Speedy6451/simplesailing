@@ -1,6 +1,6 @@
 async function init() {
     const { instance } = await WebAssembly.instantiateStreaming(
-        fetch("./pirates.wasm")
+        fetch("./index.wasm")
     );
 
     const width = 600;

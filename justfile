@@ -3,13 +3,14 @@ alias r := run
 alias c := check-zip
 
 build: minify-js minify-rust minify-html
+    cp front/style.css build/style.css
 
 build-rust:
     cargo build --manifest-path pirates/Cargo.toml --target wasm32-unknown-unknown --release
 
 minify-rust: build-rust build-dir
     wasm-strip pirates/target/wasm32-unknown-unknown/release/pirates.wasm
-    wasm-opt -o build/pirates.wasm -Oz pirates/target/wasm32-unknown-unknown/release/pirates.wasm
+    wasm-opt -o build/index.wasm -Oz pirates/target/wasm32-unknown-unknown/release/pirates.wasm
    
 minify-js: build-dir
     #minify-js -m module --output build/index.js front/index.js
