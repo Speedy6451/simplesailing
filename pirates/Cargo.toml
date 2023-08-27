@@ -11,3 +11,9 @@ opt-level = 's'
 crate-type = ["cdylib"]
 
 [dependencies]
+libm = "0.2.7"
+
+[dependencies.nalgebra]
+version = "0.32.3"
+default-features = false
+features = ["libm"]
