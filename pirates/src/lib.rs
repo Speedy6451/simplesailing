@@ -55,14 +55,15 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
 
     for y in 0..HEIGHT {
         for x in 0..WIDTH {
-            let point = Vector2::new((x+frame as usize) as f32,y as f32)* 2.0;
+            let point = Vector2::new((x+frame as usize) as f32,y as f32)* 3.0;
             let mut n = 0.0;
             n += noise::noise(point / 64.0, rand) / 1.0;
             n += noise::noise(point / 32.0, rand) / 2.0;
             n += noise::noise(point / 16.0, rand) / 4.0;
             n += noise::noise(point / 8.0, rand) / 8.0;
+            n += noise::noise(point / 4.0, rand) / 16.0;
             //buffer[y*WIDTH + x] = (((n*0.5+0.5)*256.0) as u32) << 16| 0xFF005000;
-            buffer[y*WIDTH + x] = if n > 0.02 {
+            buffer[y*WIDTH + x] = if n > 0.002 {
                 0xFF00FF00
             } else {
                 0xFFFF0000

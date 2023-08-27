@@ -11,7 +11,7 @@ function blit_frame() {
 function blit_text(text, len, x, y, size) {
     let decoded = (new TextDecoder())
         .decode(new Uint8Array(memory.buffer, text, len));
-    ctx.font = size +'vh serif'
+    ctx.font = size +'px serif'
     ctx.fillText(decoded,x,y);
 }
 
