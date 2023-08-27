@@ -1,8 +1,8 @@
 var ctx;
 var image;
 var memory;
-const width = 80;
-const height = 60;
+const width = 160;
+const height = 144;
 
 function blit_frame() {
     ctx.putImageData(image, 0, 0);
