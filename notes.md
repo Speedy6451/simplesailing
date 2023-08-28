@@ -4,7 +4,7 @@ https://localhistories.org/a-history-of-pirates/
 caravel (1200s) crew simulator with piracy mechanics?
 takes place on the english channel
  - very small scale, crossings no more than 2 minutes
- - model ~15 ports
+ - model ~15 ports https://www.reddit.com/r/MapPorn/comments/8kf22u/new_version_medieval_trade_networks_of/
      - map edges could be nasty storms
  - essentially pioneer but not in space
 

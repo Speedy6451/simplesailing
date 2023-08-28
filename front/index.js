@@ -54,7 +54,7 @@ async function init() {
         console.log(frame);
         instance.exports.frame_entry();
 
-        //requestAnimationFrame(render);
+        requestAnimationFrame(render);
     }
     canvas.onclick = render;
 

@@ -37,7 +37,7 @@ zip: build
 
 run: build
     python3 -m http.server &
-    firefox http://0.0.0.0:8080/build/index.html
+    firefox http://0.0.0.0:8000/build/index.html
 
 clean:
     cargo clean --manifest-path pirates/Cargo.toml

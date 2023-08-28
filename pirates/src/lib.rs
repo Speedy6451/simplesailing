@@ -70,9 +70,11 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
 
     for y in 0..HEIGHT {
         for x in 0..WIDTH {
-            let point = Vector2::new(((x as usize + (15 as f32 * 64.0 * (12.0 + 3.0)) as usize + 1630) as f32),(y+ 1830) as f32)* 4.0;
+            let point = Vector2::new(x as f32, y as f32)* 4.0;
+            let offset = Vector2::new(64120.0, 7320.0);
+            let point = point + offset;
             let mut n = 0.0;
-            n += (sample_map_inter(point / 64.0, &MAP)-0.5)* 0.7;
+            n += (sample_map_inter(point / 64.0, &MAP)-0.5)* 0.6;
             n += noise::noise(point / 64.0, rand) / 1.0;
             n += noise::noise(point / 32.0, rand) / 2.0;
             n += noise::noise(point / 16.0, rand) / 4.0;
@@ -80,8 +82,13 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
             n += noise::noise(point / 4.0, rand) / 16.0;
             n += noise::noise(point / 2.0, rand) / 32.0;
             //buffer[y*WIDTH + x] = (((n*0.5+0.5)*256.0) as u32) << 16| 0xFF005000;
-            buffer[y*WIDTH + x] = if n > 0.04 {
+            buffer[y*WIDTH + x] = 
+            if n > 0.1 {
                 0xFF00FF00
+            } else if n > 0.04 {
+                0xFF44FF44
+            } else if n > -0.03 {
+                0xFFFF1111 
             } else {
                 0xFFFF0000
             }
