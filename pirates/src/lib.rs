@@ -5,6 +5,9 @@ fn handle_panic(_: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 
+extern crate wee_alloc;
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 use core::sync::atomic::{AtomicU32, Ordering};
 use libm::{self, Libm};

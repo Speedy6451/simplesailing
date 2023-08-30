@@ -12,6 +12,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 libm = "0.2.7"
+wee_alloc = "0.4.5"
 
 [dependencies.nalgebra]
 version = "0.32.3"
