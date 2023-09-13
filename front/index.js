@@ -1,6 +1,7 @@
 var ctx;
 var image;
 var memory;
+var exports;
 const width = 160;
 const height = 144;
 
@@ -13,6 +14,18 @@ function blit_text(text, len, x, y, size) {
         .decode(new Uint8Array(memory.buffer, text, len));
     ctx.font = size +'px serif'
     ctx.fillText(decoded,x,y);
+}
+
+function keyboard_callback(e) {
+    const keycode_address = exports.KEYCODE.value;
+    const value = new Uint8ClampedArray(exports.memory.buffer, keycode_address, 2);
+
+    value[0] = e.keyCode;
+    console.log("thing" + value[0]);
+    console.log(keycode_address);
+    console.log(value[0]);
+
+    exports.keyboard_input();
 }
 
 async function init() {
@@ -33,6 +46,9 @@ async function init() {
         }
     );
 
+    exports = instance.exports;
+    document.getElementById("body").onkeydown=keyboard_callback;
+
     memory = instance.exports.memory
     const buffer_address = instance.exports.BUFFER.value;
     image = new ImageData(
@@ -48,16 +64,11 @@ async function init() {
     ctx.textBaseline = 'top'
     ctx.textAlign = 'left';
 
-    var frame = 1;
     const render = () => {
-        frame += 1;
-        console.log(frame);
         instance.exports.frame_entry();
 
         requestAnimationFrame(render);
     }
-    canvas.onclick = render;
-
     render();
 }
 
