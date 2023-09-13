@@ -11,6 +11,7 @@ pirates = { path = "../pirates", default_features = false }
 [package.metadata.bundle]
 name = "Simple Sailing Simulator"
 identifier = "com.github.speedy6451.simplesailing"
+icon = ["../icons/*"]
 long_description = """
 Simple Sailing Simulator: Brave the north wind and search for York, or simply explore.
 
