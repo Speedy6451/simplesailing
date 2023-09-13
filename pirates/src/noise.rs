@@ -1,4 +1,3 @@
-use libm::Libm;
 use nalgebra::Vector2;
 
 pub type PerlinBuf = [u32; 512];
@@ -32,14 +31,14 @@ pub fn lerp(a: f32, b:f32, d:f32) -> f32 {
 }
 
 fn grad(p: Vector2<f32>, b: PerlinBuf) -> Vector2<f32> {
-    const width: usize = 16;
+    const WIDTH: usize = 16;
 
 
-    let x = p.x as usize % width;
-    let y = p.y as usize % width;
+    let x = p.x as usize % WIDTH;
+    let y = p.y as usize % WIDTH;
 
-    let one = b[x*width + y] as f32;
-    let two = b[(x*width + y + 1)%512] as f32;
+    let one = b[x*WIDTH + y] as f32;
+    let two = b[(x*WIDTH + y + 1)%512] as f32;
 
     Vector2::new(one, two).normalize()
 }

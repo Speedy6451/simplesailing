@@ -7,19 +7,16 @@ fn handle_panic(_: &core::panic::PanicInfo) -> ! {
 }
 
 extern crate wee_alloc;
+#[cfg(feature = "wasm")]
 #[cfg_attr(feature = "wasm", global_allocator)]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-use lazy_static::lazy_static;
-use na::Matrix2;
 use noise::PerlinBuf;
 use core::sync::atomic::{AtomicU32, Ordering};
-use libm::{self, Libm};
+use libm;
 extern crate nalgebra as na;
-use nalgebra::{Vector2};
-use thingbuf::mpsc::{self, errors::TryRecvError};
+use nalgebra::Vector2;
 use spin::Mutex;
-use keycode::KeyMap;
 
 mod sampler;
 mod noise;
@@ -78,7 +75,7 @@ static BOAT: Mutex<Boat> = Mutex::new(Boat { x: 0.0, y: 0.0, theta: 0.0, vel: 0.
 #[no_mangle]
 pub unsafe extern fn keyboard_input() {
     let keycode = KEYCODE[0];
-    LAST_KEY.lock().insert([keycode as u32, 0]);
+    *LAST_KEY.lock() = Some([keycode as u32, 0]);
 }
 
 #[no_mangle]
@@ -124,7 +121,7 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     let camera_vec = Vector2::new(camera[0],camera[1]);
     let boat_pos = boat.get_pos();
 
-    let depth = -sample_world(camera_vec+boat_pos+half, rand);
+    let depth = -sample_world(camera_vec+boat_pos+HALF, rand);
     if depth < -0.04 {
         boat.vel = 0.0;
     } else if depth < 0.0 {
@@ -136,13 +133,13 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     }
 
     // draw sea
-    const half: Vector2<f32> = Vector2::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
+    const HALF: Vector2<f32> = Vector2::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
     for y in 0..HEIGHT {
         for x in 0..WIDTH {
             let mut point = Vector2::new(x as f32, y as f32);
-            point -= half;
+            point -= HALF;
             point *= camera[2];
-            point += half;
+            point += HALF;
             let n = sample_world(point+camera_vec+boat_pos, rand);
             buffer[y*WIDTH + x] = 
             if n > 0.1 {
@@ -170,22 +167,22 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
             point.x * sin + point.y * cos)
     }
 
-    const scale: f32 = 2.0;
+    const SCALE: f32 = 2.0;
 
-    let mut p1 = Vector2::new(-0.5, 0.7)* scale;
-    let mut p2 = Vector2::new(0.5, 0.7)* scale;
-    let mut p3 = Vector2::new(0.0, -0.7)* scale;
+    let mut p1 = Vector2::new(-0.5, 0.7)* SCALE;
+    let mut p2 = Vector2::new(0.5, 0.7)* SCALE;
+    let mut p3 = Vector2::new(0.0, -0.7)* SCALE;
     p1 = (rotate(p1, cos, sin) - camera_vec) / camera[2];
     p2 = (rotate(p2, cos, sin) - camera_vec) / camera[2];
     p3 = (rotate(p3, cos, sin) - camera_vec) / camera[2];
-    draw_tri(0xFF648CBA, buffer, p1+half, p2+half, p3+half);
-    let mut p1 = Vector2::new(0.0, 0.5)* scale;
-    let mut p2 = Vector2::new(0.4 * boat.get_intensity(wind), 0.6)* scale;
-    let mut p3 = Vector2::new(0.0, -0.6)* scale;
+    draw_tri(0xFF648CBA, buffer, p1+HALF, p2+HALF, p3+HALF);
+    let mut p1 = Vector2::new(0.0, 0.5)* SCALE;
+    let mut p2 = Vector2::new(0.4 * boat.get_intensity(wind), 0.6)* SCALE;
+    let mut p3 = Vector2::new(0.0, -0.6)* SCALE;
     p1 = (rotate(p1, cos, sin) - camera_vec) / camera[2];
     p2 = (rotate(p2, cos, sin) - camera_vec) / camera[2];
     p3 = (rotate(p3, cos, sin) - camera_vec) / camera[2];
-    draw_tri(0xFFDDDDDD, buffer, p1+half, p2+half, p3+half);
+    draw_tri(0xFFDDDDDD, buffer, p1+HALF, p2+HALF, p3+HALF);
 
 
     #[cfg(feature = "wasm")]
@@ -238,14 +235,6 @@ fn sample_world(point: Vector2<f32>, rand: PerlinBuf) -> f32 {
     n
 }
 
-#[repr(u32)]
-enum Keys {
-    Up = 38,
-    Down = 40,
-    Left = 37,
-    Right = 39
-}
-
 const RAD_TO_DEG: f32 = 57.2058;
 struct Boat {
     x: f32,
@@ -255,10 +244,6 @@ struct Boat {
 }
 
 impl Boat {
-    fn new(x: f32, y: f32, theta: f32, vel: f32) -> Boat {
-        Boat { x, y, theta, vel }
-    }
-
     fn get_pos(self: &Self) -> Vector2<f32> {
         Vector2::new(self.x, self.y)
     }
@@ -292,16 +277,3 @@ impl Boat {
     }
     
 }
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = number();
-        assert_eq!(result, 64);
-    }
-}
-

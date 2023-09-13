@@ -20,8 +20,6 @@ fn main() {
 
     let mut buffer: Vec<u32> = Vec::with_capacity(WIDTH * HEIGHT);
 
-    let mut size = (0, 0);
-
     fn keyboard_input(key: u8) {
         unsafe {
             pirates::KEYCODE[0] = key;
