@@ -27,7 +27,7 @@ fn fade(t: f32) -> f32 {
     t*t*t*(t*(t*6.0-15.0)+10.0)
 }
 
-fn lerp(a: f32, b:f32, d:f32) -> f32 {
+pub fn lerp(a: f32, b:f32, d:f32) -> f32 {
     a * (1.0-d) + b * d
 }
 

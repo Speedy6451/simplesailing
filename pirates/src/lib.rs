@@ -68,9 +68,9 @@ static MAP: [u8; MAP_WIDTH * MAP_HEIGHT] = [ // should deflate to smaller than b
     1,1,1,1,1,1,1,1,1,1,1,1,
 ];
 
-static CAMERA: Mutex<[f32; 3]> = Mutex::new([0.0, 0.0, 4.0]);
+static CAMERA: Mutex<[f32; 3]> = Mutex::new([0.0, 0.0, 0.12]);
 
-static BOAT: Mutex<Boat> = Mutex::new(Boat { x: 0.0, y: 0.0, theta: 0.0 });
+static BOAT: Mutex<Boat> = Mutex::new(Boat { x: 0.0, y: 0.0, theta: 0.0, vel: 0.0 });
 
 #[no_mangle]
 pub unsafe extern fn keyboard_input() {
@@ -109,11 +109,25 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
             39 => camera[0] += 10.0, // right
             61 => camera[2] *= 0.9, // +
             173 => camera[2] *= 1.1, // -
+            65 => boat.theta -= 10.0, // A
+            68 => boat.theta += 10.0, // D
             _ => {}
         }
     } 
 
+    let wind = 0.0/RAD_TO_DEG;
+    let vel = boat.get_velocity(wind);
+    boat.go_smooth(-vel * 0.12);
+
     let camera_vec = Vector2::new(camera[0],camera[1]);
+    let boat_pos = boat.get_pos();
+
+    let depth = -sample_world(camera_vec+boat_pos+half, rand);
+    if depth < -0.04 {
+        boat.vel = 0.0;
+    } else if depth < 0.01 {
+        boat.vel *= (1.0 - depth) * 0.25;
+    } 
 
     // draw sea
     const half: Vector2<f32> = Vector2::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
@@ -123,7 +137,7 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
             point -= half;
             point *= camera[2];
             point += half;
-            let n = sample_world(point+camera_vec, rand);
+            let n = sample_world(point+camera_vec+boat_pos, rand);
             buffer[y*WIDTH + x] = 
             if n > 0.1 {
                 0xFF00FF00
@@ -151,16 +165,16 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
 
     const scale: f32 = 2.0;
 
-    let mut p1 = Vector2::new(-0.5, 0.0)* scale;
-    let mut p2 = Vector2::new(0.5, 0.0)* scale;
-    let mut p3 = Vector2::new(0.0, -1.4)* scale;
+    let mut p1 = Vector2::new(-0.5, 0.7)* scale;
+    let mut p2 = Vector2::new(0.5, 0.7)* scale;
+    let mut p3 = Vector2::new(0.0, -0.7)* scale;
     p1 = (rotate(p1, cos, sin) - camera_vec) / camera[2];
     p2 = (rotate(p2, cos, sin) - camera_vec) / camera[2];
     p3 = (rotate(p3, cos, sin) - camera_vec) / camera[2];
     draw_tri(0xFF444444, buffer, p1+half, p2+half, p3+half);
-    let mut p1 = Vector2::new(0.0, -0.1)* scale;
-    let mut p2 = Vector2::new(0.2, 0.0)* scale;
-    let mut p3 = Vector2::new(0.0, -0.9)* scale;
+    let mut p1 = Vector2::new(0.0, 0.5)* scale;
+    let mut p2 = Vector2::new(0.4 * boat.get_intensity(wind), 0.6)* scale;
+    let mut p3 = Vector2::new(0.0, -0.6)* scale;
     p1 = (rotate(p1, cos, sin) - camera_vec) / camera[2];
     p2 = (rotate(p2, cos, sin) - camera_vec) / camera[2];
     p3 = (rotate(p3, cos, sin) - camera_vec) / camera[2];
@@ -228,12 +242,13 @@ const RAD_TO_DEG: f32 = 57.2058;
 struct Boat {
     x: f32,
     y: f32,
-    theta: f32
+    theta: f32,
+    vel: f32,
 }
 
 impl Boat {
-    fn new(x: f32, y: f32, theta: f32) -> Boat {
-        Boat { x, y, theta }
+    fn new(x: f32, y: f32, theta: f32, vel: f32) -> Boat {
+        Boat { x, y, theta, vel }
     }
 
     fn get_pos(self: &Self) -> Vector2<f32> {
@@ -245,19 +260,27 @@ impl Boat {
        self.y = pos.y;
     }
 
+    fn get_intensity(self: &Self, wind_direction: f32) -> f32 {
+        libm::sinf(self.theta/RAD_TO_DEG)
+    }
+
     fn get_velocity(self: &Self, wind_direction: f32) -> f32 {
-        let diff = 90.0 - libm::fabsf(self.theta % 360.0 - wind_direction);
-        let diff = libm::fabsf(diff);
-        diff * 0.5
+        libm::fabsf(self.get_intensity(wind_direction))
+    }
+
+    fn go_smooth(self: &mut Self, vel: f32) {
+        self.vel = noise::lerp(self.vel, vel, 0.14);
+
+        self.go(self.vel);
     }
 
     fn go(self: &mut Self, velocity: f32) {
-        let cos = libm::cosf(self.theta/RAD_TO_DEG);
-        let sin = libm::sinf(self.theta/RAD_TO_DEG);
-        let pos = Vector2::new(
-            self.x * cos - self.y * sin,
-            self.x * sin + self.y * cos);
-        self.set_pos(pos);
+        let cos = libm::cosf((self.theta+ 45.0)/RAD_TO_DEG);
+        let sin = libm::sinf((self.theta+ 45.0)/RAD_TO_DEG);
+        let unit = Vector2::new(
+            cos - sin,
+            sin + cos);
+        self.set_pos(self.get_pos() + unit * velocity);
     }
     
 }
