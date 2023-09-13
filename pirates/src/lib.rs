@@ -143,13 +143,14 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
             let n = sample_world(point+camera_vec+boat_pos, rand);
             buffer[y*WIDTH + x] = 
             if n > 0.1 {
-                0xFF00FF00
+                let n = (n+0.1) * 300.0;
+                0xFF00FF00 + (n as u32 + (n as u32) << 8)
             } else if n > 0.04 {
-                0xFF44FF44
-            } else if n > -0.03 {
-                0xFFFF1111 
-            } else {
-                0xFFFF0000
+                let n = (0.1-n) * -300.0;
+                0xFF44FF44 + (n as u32 + (n as u32) << 8)
+            } else  {
+                let n = (n+0.1) * 300.0;
+                0xFFFF3333 + (n as u32 + (n as u32) << 8)
             }
         }
     }
