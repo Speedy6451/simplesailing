@@ -68,7 +68,7 @@ static MAP: [u8; MAP_WIDTH * MAP_HEIGHT] = [ // should deflate to smaller than b
     1,1,1,1,1,1,1,1,1,1,1,1,
 ];
 
-static CAMERA: Mutex<[f32; 3]> = Mutex::new([0.0, 0.0, 0.12]);
+static CAMERA: Mutex<[f32; 3]> = Mutex::new([0.0, 0.0, 0.18]);
 
 static BOAT: Mutex<Boat> = Mutex::new(Boat { x: 0.0, y: 0.0, theta: 0.0, vel: 0.0 });
 
@@ -103,10 +103,10 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
 
     if let Some(key) = LAST_KEY.lock().take() {
         match key[0] {
-            38 => camera[1] -= 10.0, // up
-            40 => camera[1] += 10.0, // down
-            37 => camera[0] -= 10.0, // left
-            39 => camera[0] += 10.0, // right
+            38 => camera[1] -= 10.0*camera[2], // up
+            40 => camera[1] += 10.0*camera[2], // down
+            37 => camera[0] -= 10.0*camera[2], // left
+            39 => camera[0] += 10.0*camera[2], // right
             61 => camera[2] *= 0.9, // +
             173 => camera[2] *= 1.1, // -
             65 => boat.theta -= 10.0, // A
@@ -117,7 +117,6 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
 
     let wind = 0.0/RAD_TO_DEG;
     let vel = boat.get_velocity(wind);
-    boat.go_smooth(-vel * 0.12);
 
     let camera_vec = Vector2::new(camera[0],camera[1]);
     let boat_pos = boat.get_pos();
@@ -125,9 +124,13 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     let depth = -sample_world(camera_vec+boat_pos+half, rand);
     if depth < -0.04 {
         boat.vel = 0.0;
-    } else if depth < 0.01 {
+    } else if depth < 0.0 {
         boat.vel *= (1.0 - depth) * 0.25;
     } 
+
+    if depth > -0.04 {
+        boat.go_smooth(-vel * 0.42);
+    }
 
     // draw sea
     const half: Vector2<f32> = Vector2::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
@@ -171,7 +174,7 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     p1 = (rotate(p1, cos, sin) - camera_vec) / camera[2];
     p2 = (rotate(p2, cos, sin) - camera_vec) / camera[2];
     p3 = (rotate(p3, cos, sin) - camera_vec) / camera[2];
-    draw_tri(0xFF444444, buffer, p1+half, p2+half, p3+half);
+    draw_tri(0xFF648CBA, buffer, p1+half, p2+half, p3+half);
     let mut p1 = Vector2::new(0.0, 0.5)* scale;
     let mut p2 = Vector2::new(0.4 * boat.get_intensity(wind), 0.6)* scale;
     let mut p3 = Vector2::new(0.0, -0.6)* scale;
@@ -261,7 +264,7 @@ impl Boat {
     }
 
     fn get_intensity(self: &Self, wind_direction: f32) -> f32 {
-        libm::sinf(self.theta/RAD_TO_DEG)
+        libm::sinf((self.theta-wind_direction)/RAD_TO_DEG)
     }
 
     fn get_velocity(self: &Self, wind_direction: f32) -> f32 {
@@ -269,7 +272,7 @@ impl Boat {
     }
 
     fn go_smooth(self: &mut Self, vel: f32) {
-        self.vel = noise::lerp(self.vel, vel, 0.14);
+        self.vel = noise::lerp(self.vel, vel, 0.09);
 
         self.go(self.vel);
     }
