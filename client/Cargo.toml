@@ -8,3 +8,19 @@ edition = "2021"
 [dependencies]
 minifb = "0.25.0"
 pirates = { path = "../pirates", default_features = false }
+
+[package.metadata.bundle]
+name = "Simple Sailing Simulator"
+identifier = "com.github.speedy6451.simplesailing"
+short_description = "A game about wind"
+long_description = """
+Simple Sailing Simulator: Brave the north wind and search for York, or simply explore.
+
+Controls:
++/-: zoom
+Arrow Keys: Pan Camera
+W: rudder left
+D: rudder right
+
+Your sailboat travels fastest going perpendicular to the wind.
+"""
