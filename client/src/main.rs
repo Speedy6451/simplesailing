@@ -1,4 +1,4 @@
-use minifb::{Key, ScaleMode, Window, WindowOptions};
+use minifb::{Key, ScaleMode, Window, WindowOptions, Scale};
 extern crate pirates;
 use pirates::{WIDTH, HEIGHT};
 
@@ -10,6 +10,7 @@ fn main() {
         WindowOptions {
             resize: true,
             scale_mode: ScaleMode::AspectRatioStretch,
+            scale: Scale::X4,
             ..WindowOptions::default()
         },
     )
@@ -43,12 +44,12 @@ fn main() {
         window.get_keys().iter().for_each(|key| match key {
             Key::A => keyboard_input(65),
             Key::D => keyboard_input(68),
-            _ => (),
-        });
-
-        window.get_keys_released().iter().for_each(|key| match key {
-            Key::W => println!("released w!"),
-            Key::T => println!("released t!"),
+            Key::Equal => keyboard_input(61),
+            Key::Minus => keyboard_input(173),
+            Key::Up => keyboard_input(38),
+            Key::Down => keyboard_input(40),
+            Key::Left => keyboard_input(37),
+            Key::Right => keyboard_input(39),
             _ => (),
         });
 
