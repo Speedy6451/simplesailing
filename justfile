@@ -33,7 +33,7 @@ check-zip: zip
     @cat build/release.zip | wc -c | xargs -I {} python3 -c "print(str(round({}/(13*1024)*100,2))+'%')"
 
 zip: build
-    zip -r build/release.zip build -x release.zip
+    cd build; zip -r release.zip * -x release.zip
 
 run: build
     python3 -m http.server &
