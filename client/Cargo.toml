@@ -2,6 +2,7 @@
 name = "client"
 version = "0.1.0"
 edition = "2021"
+description = "A game about wind"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -12,7 +13,6 @@ pirates = { path = "../pirates", default_features = false }
 [package.metadata.bundle]
 name = "Simple Sailing Simulator"
 identifier = "com.github.speedy6451.simplesailing"
-short_description = "A game about wind"
 long_description = """
 Simple Sailing Simulator: Brave the north wind and search for York, or simply explore.
 

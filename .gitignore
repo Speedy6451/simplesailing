@@ -1,2 +1,3 @@
-pirates/target
+target
 build
+front/index.wasm
