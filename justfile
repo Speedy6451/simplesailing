@@ -6,8 +6,8 @@ build: minify-js minify-rust minify-html
     cp front/style.css build/style.css
 
 build-rust:
-    cargo build --manifest-path pirates/Cargo.toml --target wasm32-unknown-unknown --release
-    cp pirates/target/wasm32-unknown-unknown/release/pirates.wasm front/index.wasm
+    cargo build --manifest-path pirates/Cargo.toml --target wasm32-unknown-unknown --features wasm --release
+    cp target/wasm32-unknown-unknown/release/pirates.wasm front/index.wasm
 
 minify-rust: build-rust build-dir
     wasm-strip front/index.wasm

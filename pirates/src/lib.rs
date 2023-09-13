@@ -1,4 +1,4 @@
-#[cfg_attr(feature = "wasm", no_std)]
+#![cfg_attr(feature = "wasm", no_std)]
 
 #[cfg(feature = "wasm")]
 #[panic_handler]
