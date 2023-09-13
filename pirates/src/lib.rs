@@ -6,6 +6,7 @@ fn handle_panic(_: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 
+#[cfg(feature = "wasm")]
 extern crate wee_alloc;
 #[cfg(feature = "wasm")]
 #[cfg_attr(feature = "wasm", global_allocator)]

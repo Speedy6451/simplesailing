@@ -5,7 +5,7 @@ edition = "2021"
 
 [features]
 default = ["wasm"]
-wasm = []
+wasm = ["wee_alloc"]
 
 [profile.release]
 lto = true
@@ -15,21 +15,14 @@ opt-level = 's'
 crate-type = ["lib", "cdylib"]
 
 [dependencies]
-keycode = "0.4.0"
 libm = "0.2.7"
 spin = "0.9.8"
-wee_alloc = "0.4.5"
+
+[dependencies.wee_alloc]
+version = "0.4.5"
+optional = true
 
 [dependencies.nalgebra]
 version = "0.32.3"
 default-features = false
 features = ["libm"]
-
-[dependencies.thingbuf]
-version = "0.1.4"
-default-features = false
-features = ["static"]
-
-[dependencies.lazy_static]
-version = "1.4.0"
-features = ["spin_no_std"]
