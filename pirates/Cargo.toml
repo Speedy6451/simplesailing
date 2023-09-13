@@ -3,12 +3,16 @@ name = "pirates"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["wasm"]
+wasm = []
+
 [profile.release]
 lto = true
 opt-level = 's'
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["lib"]
 
 [dependencies]
 keycode = "0.4.0"

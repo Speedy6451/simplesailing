@@ -1,12 +1,13 @@
-#![no_std]
+#[cfg_attr(feature = "wasm", no_std)]
 
+#[cfg(feature = "wasm")]
 #[panic_handler]
 fn handle_panic(_: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 
 extern crate wee_alloc;
-#[global_allocator]
+#[cfg_attr(feature = "wasm", global_allocator)]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 use lazy_static::lazy_static;
@@ -23,11 +24,13 @@ use keycode::KeyMap;
 mod sampler;
 mod noise;
 
+#[cfg(feature = "wasm")]
 extern {
     fn blit_frame();
     fn blit_text(text: *const u8, len: u32, x: i32, y: i32, size: u8);
 }
 
+#[cfg(feature = "wasm")]
 fn draw_text(text: &str, x: i32, y: i32, size: u8) {
     unsafe {
         blit_text(
@@ -37,15 +40,15 @@ fn draw_text(text: &str, x: i32, y: i32, size: u8) {
     }
 }
 
-const WIDTH: usize = 160;
-const HEIGHT: usize = 144;
+pub const WIDTH: usize = 160;
+pub const HEIGHT: usize = 144;
 
 #[no_mangle]
-static mut BUFFER: [u32; WIDTH * HEIGHT] = [0; WIDTH * HEIGHT];
+pub static mut BUFFER: [u32; WIDTH * HEIGHT] = [0; WIDTH * HEIGHT];
 
 // hack, js -> rust ffi in weird shape without wasm_bindgen
 #[no_mangle]
-static mut KEYCODE: [u8; 2] = [0; 2];
+pub static mut KEYCODE: [u8; 2] = [0; 2];
 
 static LAST_KEY: Mutex<Option<[u32; 2]>> = Mutex::new(None);
 
@@ -185,6 +188,7 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     draw_tri(0xFFDDDDDD, buffer, p1+half, p2+half, p3+half);
 
 
+    #[cfg(feature = "wasm")]
     unsafe { blit_frame(); }
 
     //draw_text("hi from rust", 0,100,30);
