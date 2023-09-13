@@ -39,6 +39,19 @@ run: build
     python3 -m http.server &
     firefox http://0.0.0.0:8000/build/index.html
 
+bundle:
+    cd client; cargo bundle --profile minsized
+
+build-native-min:
+    cargo build -p client --profile minsized
+    upx --ultra-brute target/minsized/client
+
+release: build-native-min zip bundle
+    mkdir -p release
+    cp build/release.zip release/release.zip
+    cp target/minsized/client release/sss-`uname`.elf
+    cp -r target/minsized/bundle/* release
+
 clean:
     cargo clean --manifest-path pirates/Cargo.toml
     rm -r build
