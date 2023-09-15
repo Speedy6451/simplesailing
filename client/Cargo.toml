@@ -4,7 +4,12 @@ version = "0.1.0"
 edition = "2021"
 description = "A game about wind"
 
+[features]
+default = ["gamepad"]
+gamepad = ["gilrs"]
+
 [dependencies]
+gilrs = { version = "0.10.2", optional = true }
 minifb = "0.25.0"
 pirates = { path = "../pirates", default_features = false }
 

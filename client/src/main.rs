@@ -1,8 +1,13 @@
 use minifb::{Key, ScaleMode, Window, WindowOptions, Scale};
 extern crate pirates;
 use pirates::{WIDTH, HEIGHT};
+#[cfg(feature = "gilrs")]
+use gilrs::{Gilrs, Button, Event};
 
 fn main() {
+    #[cfg(feature = "gilrs")]
+    let mut gilrs = Gilrs::new().unwrap();
+
     let mut window = Window::new(
         "Simple Sailing Simulator",
         WIDTH,
@@ -28,6 +33,9 @@ fn main() {
         }
     }
 
+    #[cfg(feature = "gamepad")]
+    let mut gamepad_handle = None;
+
     while window.is_open() && !window.is_key_down(Key::Escape) {
         buffer.clear();
         unsafe {
@@ -38,6 +46,28 @@ fn main() {
                 let arr = [arr[3],arr[0],arr[1],arr[2]];
                 let pix: u32 = std::mem::transmute(arr);
                 buffer.push(pix.swap_bytes());
+            }
+        }
+
+        #[cfg(feature = "gamepad")]
+        if let Some(event) = gilrs.next_event() {
+            gamepad_handle = Some(event.id);
+        println!("gampad");
+        }
+
+        #[cfg(feature = "gamepad")]
+        if let Some(gamepad) = gamepad_handle.map(|h| gilrs.gamepad(h)) {
+            if gamepad.is_pressed(Button::DPadLeft) {
+                keyboard_input(65)
+            }
+            if gamepad.is_pressed(Button::DPadRight) {
+                keyboard_input(68)
+            }
+            if gamepad.is_pressed(Button::DPadUp) {
+                keyboard_input(61)
+            }
+            if gamepad.is_pressed(Button::DPadDown) {
+                keyboard_input(173)
             }
         }
 
