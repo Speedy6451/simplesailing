@@ -75,8 +75,7 @@ static BOAT: Mutex<Boat> = Mutex::new(Boat { x: 0.0, y: 0.0, theta: 0.0, vel: 0.
 
 #[no_mangle]
 pub unsafe extern fn keyboard_input() {
-    let keycode = KEYCODE[0];
-    *LAST_KEY.lock() = Some([keycode as u32, 0]);
+    *LAST_KEY.lock() = Some([KEYCODE[0] as u32, KEYCODE[1] as u32]);
 }
 
 #[no_mangle]
@@ -112,6 +111,7 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
             173 => camera[2] *= 1.1, // -
             65 => boat.theta -= 10.0, // A
             68 => boat.theta += 10.0, // D
+            1 => boat.theta += (key[1] as f32 - 127.0) * 0.031, // analog rudder
             _ => {}
         }
     } 
