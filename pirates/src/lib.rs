@@ -15,6 +15,8 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 extern crate alloc;
 use alloc::vec::Vec;
 use noise::PerlinBuf;
+use num_traits::FromPrimitive;
+use num_derive::FromPrimitive;
 use core::sync::atomic::{AtomicU32, Ordering};
 use libm;
 extern crate nalgebra as na;
@@ -22,8 +24,6 @@ use nalgebra::Vector2;
 use spin::Mutex;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
-
-use crate::noise::lerp;
 
 mod sampler;
 mod noise;
@@ -108,20 +108,20 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     //camera[0] += 1.0;
 
     while let Some(key) = INPUTS.lock().pop() {
-        match key[0] {
-            38 => camera[1] -= 10.0*camera[2], // up
-            40 => camera[1] += 10.0*camera[2], // down
-            37 => camera[0] -= 10.0*camera[2], // left
-            39 => camera[0] += 10.0*camera[2], // right
-            61 => camera[2] *= 0.9, // +
-            173 => camera[2] *= 1.1, // -
-            65 => boat.theta -= 10.0, // A
-            68 => boat.theta += 10.0, // D
-            0 => camera[2] *= 1.0 - (key[1] as f32 - 127.0) * 0.0004, // analog zoom
-            1 => boat.theta += (key[1] as f32 - 127.0) * 0.031, // analog rudder
-            3 => camera[1] -= (key[1] as f32 - 127.0) * 0.004, // pan[y]
-            4 => camera[0] += (key[1] as f32 - 127.0) * 0.004, // pan[x]
-            _ => {}
+        use Input::*;
+        match FromPrimitive::from_u32(key[0]).unwrap() {
+            PanUp => camera[1] -= 10.0*camera[2], // up
+            PanDown => camera[1] += 10.0*camera[2], // down
+            PanLeft => camera[0] -= 10.0*camera[2], // left
+            PanRight => camera[0] += 10.0*camera[2], // right
+            ZoomIn => camera[2] *= 0.9, // +
+            ZoomOut => camera[2] *= 1.1, // -
+            RudderLeft => boat.theta -= 10.0, // A
+            RudderRight => boat.theta += 10.0, // D
+            AxisZoom => camera[2] *= 1.0 - (key[1] as f32 - 127.0) * 0.0004, // analog zoom
+            AxisRudder => boat.theta += (key[1] as f32 - 127.0) * 0.031, // analog rudder
+            AxisPanY => camera[1] -= (key[1] as f32 - 127.0) * 0.004, // pan[y]
+            AxisPanX => camera[0] += (key[1] as f32 - 127.0) * 0.004, // pan[x]
         }
     } 
 
@@ -146,9 +146,9 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     const HALF: Vector2<f32> = Vector2::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
 
     #[cfg(feature = "rayon")]
-    let mut buffer_iter = buffer.par_iter_mut();
+    let buffer_iter = buffer.par_iter_mut();
     #[cfg(not(feature = "rayon"))]
-    let mut buffer_iter = buffer.iter_mut();
+    let buffer_iter = buffer.iter_mut();
 
     buffer_iter.enumerate().for_each(|pix| {
         let y = pix.0 / WIDTH;
@@ -292,4 +292,29 @@ impl Boat {
         self.set_pos(self.get_pos() + unit * velocity);
     }
     
+}
+
+#[derive(FromPrimitive)]
+#[repr(u8)]
+pub enum Input {
+    /// Up Arrow
+    PanUp = 38,
+    /// Down Arrow
+    PanDown = 40,
+    /// Left Arrow
+    PanLeft = 37,
+    /// Right Arrow
+    PanRight = 39,
+    /// + 
+    ZoomIn = 61,
+    /// -
+    ZoomOut = 173,
+    /// A
+    RudderLeft = 65,
+    /// D
+    RudderRight = 68,
+    AxisZoom = 0,
+    AxisRudder = 1, 
+    AxisPanY = 3, 
+    AxisPanX = 4, 
 }

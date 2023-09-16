@@ -16,6 +16,8 @@ crate-type = ["lib", "cdylib"]
 
 [dependencies]
 libm = "0.2.7"
+num-derive = "0.4.0"
+num-traits = "0.2.16"
 spin = "0.9.8"
 
 [dependencies.rayon]
