@@ -12,6 +12,8 @@ extern crate wee_alloc;
 #[cfg_attr(feature = "wasm", global_allocator)]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+extern crate alloc;
+use alloc::vec::Vec;
 use noise::PerlinBuf;
 use core::sync::atomic::{AtomicU32, Ordering};
 use libm;
@@ -50,7 +52,7 @@ pub static mut BUFFER: [u32; WIDTH * HEIGHT] = [0; WIDTH * HEIGHT];
 #[no_mangle]
 pub static mut KEYCODE: [u8; 2] = [0; 2];
 
-static LAST_KEY: Mutex<Option<[u32; 2]>> = Mutex::new(None);
+static INPUTS: Mutex<Vec<[u32; 2]>> = Mutex::new(Vec::new());
 
 static FRAME: AtomicU32 = AtomicU32::new(0);
 
@@ -77,7 +79,7 @@ static BOAT: Mutex<Boat> = Mutex::new(Boat { x: 0.0, y: 0.0, theta: 0.0, vel: 0.
 
 #[no_mangle]
 pub unsafe extern fn keyboard_input() {
-    *LAST_KEY.lock() = Some([KEYCODE[0] as u32, KEYCODE[1] as u32]);
+    INPUTS.lock().push([KEYCODE[0] as u32, KEYCODE[1] as u32]);
 }
 
 #[no_mangle]
@@ -103,7 +105,7 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
 
     //camera[0] += 1.0;
 
-    if let Some(key) = LAST_KEY.lock().take() {
+    while let Some(key) = INPUTS.lock().pop() {
         match key[0] {
             38 => camera[1] -= 10.0*camera[2], // up
             40 => camera[1] += 10.0*camera[2], // down
