@@ -65,6 +65,7 @@ fn main() {
 
         #[cfg(feature = "gamepad")]
         if let Some(gamepad) = gamepad_handle.map(|h| gilrs.gamepad(h)) {
+            // see [ref:input_handler] for mapping info
             gamepad.axis_data(Axis::LeftStickX).map(|axis| {
                 analog_input(1, axis.value());
             });
@@ -100,6 +101,7 @@ fn main() {
             }
         }
 
+        // see [ref:input_handler] for mapping info
         window.get_keys().iter().for_each(|key| match key {
             Key::A => keyboard_input(65),
             Key::D => keyboard_input(68),

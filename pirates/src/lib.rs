@@ -106,7 +106,7 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     //camera[0] += 1.0;
 
     while let Some(key) = INPUTS.lock().pop() {
-        match key[0] {
+        match key[0] { // [tag:input_handler]
             38 => camera[1] -= 10.0*camera[2], // up
             40 => camera[1] += 10.0*camera[2], // down
             37 => camera[0] -= 10.0*camera[2], // left
@@ -237,8 +237,7 @@ fn draw_tri(color: u32, buffer: &mut [u32; WIDTH*HEIGHT], p1: Vector2<f32>, p2: 
 }
 
 fn sample_world(point: Vector2<f32>, rand: PerlinBuf) -> f32 {
-    let offset = Vector2::new(64480.0, 7870.0);
-    //240.0,240.0
+    let offset = Vector2::new(64492.0, 7892.0);
     let point = point + offset;
     let mut n = 0.0;
     n += (sampler::sample_map_inter(point / 64.0, &MAP)-0.5)* 0.6;
