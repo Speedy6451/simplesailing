@@ -33,7 +33,8 @@ fn main() {
         }
     }
 
-    fn analog_input(chan: u8, val: i8) {
+    fn analog_input(chan: u8, val: f32) {
+        let val = (val * 127.0) as i8;
         unsafe {
             pirates::KEYCODE[0] = chan;
             pirates::KEYCODE[1] = (val + 127) as u8;
@@ -60,17 +61,24 @@ fn main() {
         #[cfg(feature = "gamepad")]
         while let Some(event) = gilrs.next_event() {
             gamepad_handle = Some(event.id);
-        println!("gampad");
         }
 
         #[cfg(feature = "gamepad")]
         if let Some(gamepad) = gamepad_handle.map(|h| gilrs.gamepad(h)) {
-            let val = gamepad.state()
-                       .axis_data(gamepad.axis_code(Axis::LeftStickX).unwrap());
-            if val.is_some() {
-               let val = dbg!(val.unwrap().value() * 127.0) as i8;
-               dbg!(val);
-                analog_input(1, val);
+            gamepad.axis_data(Axis::LeftStickX).map(|axis| {
+                analog_input(1, axis.value());
+            });
+            if gamepad.is_pressed(Button::RightTrigger) {
+                gamepad.axis_data(Axis::RightStickY).map(|axis| {
+                    analog_input(3, dbg!(axis.value()));
+                });
+                gamepad.axis_data(Axis::RightStickX).map(|axis| {
+                    analog_input(4, dbg!(axis.value()));
+                });
+            } else {
+                gamepad.axis_data(Axis::RightStickY).map(|axis| {
+                    analog_input(0, dbg!(axis.value()));
+                });
             }
             if gamepad.is_pressed(Button::DPadLeft) {
                 keyboard_input(65)

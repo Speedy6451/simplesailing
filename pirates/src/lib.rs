@@ -23,6 +23,8 @@ use spin::Mutex;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
 
+use crate::noise::lerp;
+
 mod sampler;
 mod noise;
 
@@ -115,7 +117,10 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
             173 => camera[2] *= 1.1, // -
             65 => boat.theta -= 10.0, // A
             68 => boat.theta += 10.0, // D
+            0 => camera[2] *= 1.0 - (key[1] as f32 - 127.0) * 0.0004, // analog zoom
             1 => boat.theta += (key[1] as f32 - 127.0) * 0.031, // analog rudder
+            3 => camera[1] -= (key[1] as f32 - 127.0) * 0.004, // pan[y]
+            4 => camera[0] += (key[1] as f32 - 127.0) * 0.004, // pan[x]
             _ => {}
         }
     } 
