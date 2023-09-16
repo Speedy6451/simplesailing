@@ -21,9 +21,6 @@ function keyboard_callback(e) {
     const value = new Uint8ClampedArray(exports.memory.buffer, keycode_address, 2);
 
     value[0] = e.keyCode;
-    console.log("thing" + value[0]);
-    console.log(keycode_address);
-    console.log(value[0]);
 
     exports.keyboard_input();
 }

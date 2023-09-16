@@ -18,6 +18,8 @@ use libm;
 extern crate nalgebra as na;
 use nalgebra::Vector2;
 use spin::Mutex;
+#[cfg(feature = "rayon")]
+use rayon::prelude::*;
 
 mod sampler;
 mod noise;
@@ -135,26 +137,32 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
 
     // draw sea
     const HALF: Vector2<f32> = Vector2::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
-    for y in 0..HEIGHT {
-        for x in 0..WIDTH {
-            let mut point = Vector2::new(x as f32, y as f32);
-            point -= HALF;
-            point *= camera[2];
-            point += HALF;
-            let n = sample_world(point+camera_vec+boat_pos, rand);
-            buffer[y*WIDTH + x] = 
-            if n > 0.1 {
-                let n = (n+0.1) * 300.0;
-                0xFF00FF00 + (n as u32 + (n as u32) << 8)
-            } else if n > 0.04 {
-                let n = (0.1-n) * -300.0;
-                0xFF44FF44 + (n as u32 + (n as u32) << 8)
-            } else  {
-                let n = (n+0.1) * 300.0;
-                0xFFFF3333 + (n as u32 + (n as u32) << 8)
-            }
+
+    #[cfg(feature = "rayon")]
+    let mut buffer_iter = buffer.par_iter_mut();
+    #[cfg(not(feature = "rayon"))]
+    let mut buffer_iter = buffer.iter_mut();
+
+    buffer_iter.enumerate().for_each(|pix| {
+        let y = pix.0 / WIDTH;
+        let x = pix.0 % WIDTH;
+        let mut point = Vector2::new(x as f32, y as f32);
+        point -= HALF;
+        point *= camera[2];
+        point += HALF;
+        let n = sample_world(point+camera_vec+boat_pos, rand);
+        *pix.1 = 
+        if n > 0.1 {
+            let n = (n+0.1) * 300.0;
+            0xFF00FF00 + (n as u32 + (n as u32) << 8)
+        } else if n > 0.04 {
+            let n = (0.1-n) * -300.0;
+            0xFF44FF44 + (n as u32 + (n as u32) << 8)
+        } else  {
+            let n = (n+0.1) * 300.0;
+            0xFFFF3333 + (n as u32 + (n as u32) << 8)
         }
-    }
+    });
 
     // draw boat
 

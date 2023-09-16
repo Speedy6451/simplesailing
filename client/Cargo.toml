@@ -11,7 +11,11 @@ gamepad = ["gilrs"]
 [dependencies]
 gilrs = { version = "0.10.2", optional = true }
 minifb = "0.25.0"
-pirates = { path = "../pirates", default_features = false }
+
+[dependencies.pirates]
+path = "../pirates"
+default_features = false
+features = ["rayon"]
 
 [package.metadata.bundle]
 name = "Simple Sailing Simulator"
