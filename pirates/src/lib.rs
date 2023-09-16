@@ -23,8 +23,6 @@ use spin::Mutex;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
 
-use crate::noise::lerp;
-
 mod sampler;
 mod noise;
 
@@ -113,6 +111,8 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
             40 => camera[1] += 10.0*camera[2], // down
             37 => camera[0] -= 10.0*camera[2], // left
             39 => camera[0] += 10.0*camera[2], // right
+            191 => *camera = [0.0, 0.0, 0.18], // reset camera (/)
+            82 => boat.set_pos(Vector2::zeros()), // reset boat (r)
             61 => camera[2] *= 0.9, // +
             173 => camera[2] *= 1.1, // -
             65 => boat.theta -= 10.0, // A
@@ -146,9 +146,9 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     const HALF: Vector2<f32> = Vector2::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
 
     #[cfg(feature = "rayon")]
-    let mut buffer_iter = buffer.par_iter_mut();
+    let buffer_iter = buffer.par_iter_mut();
     #[cfg(not(feature = "rayon"))]
-    let mut buffer_iter = buffer.iter_mut();
+    let buffer_iter = buffer.iter_mut();
 
     buffer_iter.enumerate().for_each(|pix| {
         let y = pix.0 / WIDTH;

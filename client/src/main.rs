@@ -70,15 +70,21 @@ fn main() {
             });
             if gamepad.is_pressed(Button::RightTrigger) {
                 gamepad.axis_data(Axis::RightStickY).map(|axis| {
-                    analog_input(3, dbg!(axis.value()));
+                    analog_input(3, axis.value());
                 });
                 gamepad.axis_data(Axis::RightStickX).map(|axis| {
-                    analog_input(4, dbg!(axis.value()));
+                    analog_input(4, axis.value());
                 });
             } else {
                 gamepad.axis_data(Axis::RightStickY).map(|axis| {
-                    analog_input(0, dbg!(axis.value()));
+                    analog_input(0, axis.value());
                 });
+            }
+            if gamepad.is_pressed(Button::West) {
+                keyboard_input(191)
+            }
+            if gamepad.is_pressed(Button::North) {
+                keyboard_input(82)
             }
             if gamepad.is_pressed(Button::DPadLeft) {
                 keyboard_input(65)
@@ -103,6 +109,8 @@ fn main() {
             Key::Down => keyboard_input(40),
             Key::Left => keyboard_input(37),
             Key::Right => keyboard_input(39),
+            Key::R => keyboard_input(82),
+            Key::Slash => keyboard_input(191),
             _ => (),
         });
 
