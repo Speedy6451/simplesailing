@@ -124,7 +124,7 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     let camera_vec = Vector2::new(camera[0],camera[1]);
     let boat_pos = boat.get_pos();
 
-    let depth = -sample_world(camera_vec+boat_pos+HALF, rand);
+    let depth = -sample_world(boat_pos+HALF, rand);
     if depth < -0.04 {
         boat.vel = 0.0;
     } else if depth < 0.0 {
@@ -210,8 +210,8 @@ fn draw_tri(color: u32, buffer: &mut [u32; WIDTH*HEIGHT], p1: Vector2<f32>, p2: 
         (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
     }
 
-    for y in min_y..max_y {
-        for x in min_x..max_x {
+    for y in min_y.max(0)..max_y.min(HEIGHT) {
+        for x in min_x.max(0)..max_x.min(WIDTH) {
             // https://stackoverflow.com/a/2049593
             let point = Vector2::new(x as f32, y as f32);
 
