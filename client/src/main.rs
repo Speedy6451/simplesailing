@@ -74,20 +74,19 @@ fn main() {
 
         #[cfg(feature = "gamepad")]
         if let Some(gamepad) = gamepad_handle.map(|h| gilrs.gamepad(h)) {
-            // see [ref:input_handler] for mapping info
             gamepad.axis_data(Axis::LeftStickX).map(|axis| {
                 analog_input(AxisRudder, axis.value());
             });
             if gamepad.is_pressed(Button::LeftTrigger) {
                 gamepad.axis_data(Axis::LeftStickY).map(|axis| {
-                    analog_input(5, axis.value());
+                    analog_input(AxisSail, axis.value());
                 });
             }
             if gamepad.is_pressed(Button::South) {
-                keyboard_input(69)
+                keyboard_input(RaiseSail)
             }
             if gamepad.is_pressed(Button::East) {
-                keyboard_input(81)
+                keyboard_input(LowerSail)
             }
             if gamepad.is_pressed(Button::RightTrigger) {
                 gamepad.axis_data(Axis::RightStickY).map(|axis| {
@@ -102,10 +101,10 @@ fn main() {
                 });
             }
             if gamepad.is_pressed(Button::West) {
-                keyboard_input(191)
+                keyboard_input(ResetCamera)
             }
             if gamepad.is_pressed(Button::North) {
-                keyboard_input(82)
+                keyboard_input(ResetBoat)
             }
             if gamepad.is_pressed(Button::DPadLeft) {
                 keyboard_input(PanLeft)
@@ -121,7 +120,6 @@ fn main() {
             }
         }
 
-        // see [ref:input_handler] for mapping info
         window.get_keys().iter().for_each(|key| match key {
             Key::A => keyboard_input(RudderLeft),
             Key::D => keyboard_input(RudderRight),
@@ -131,10 +129,10 @@ fn main() {
             Key::Down => keyboard_input(PanDown),
             Key::Left => keyboard_input(PanLeft),
             Key::Right => keyboard_input(PanRight),
-            Key::R => keyboard_input(82),
-            Key::Slash => keyboard_input(191),
-            Key::E => keyboard_input(69),
-            Key::Q => keyboard_input(81),
+            Key::R => keyboard_input(ResetBoat),
+            Key::Slash => keyboard_input(ResetCamera),
+            Key::E => keyboard_input(RaiseSail),
+            Key::Q => keyboard_input(LowerSail),
             _ => (),
         });
 

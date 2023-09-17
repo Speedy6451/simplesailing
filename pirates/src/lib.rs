@@ -15,8 +15,6 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 extern crate alloc;
 use alloc::vec::Vec;
 use noise::PerlinBuf;
-use num_traits::FromPrimitive;
-use num_derive::FromPrimitive;
 use core::sync::atomic::{AtomicU32, Ordering};
 use libm;
 extern crate nalgebra as na;
@@ -118,19 +116,21 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     };
     while let Some(key) = INPUTS.lock().pop() {
         use Input::*;
-        match FromPrimitive::from_u32(key[0]).unwrap() { // [tag:input_handler]
+        let input = (key[0] as u8).try_into().ok();
+        if input.is_none() { continue; }
+        match input.unwrap() {
             PanUp => camera[1] -= gain*10.0*camera[2], // up
             PanDown => camera[1] += gain*10.0*camera[2], // down
             PanLeft => camera[0] -= gain*10.0*camera[2], // left
             PanRight => camera[0] += gain*10.0*camera[2], // right
-            191 => {
+            ResetCamera => {
                 *camera = [
                     noise::lerp(camera[0], 0.00, (gain * 0.25).min(1.0)),
                     noise::lerp(camera[1], 0.00, (gain * 0.25).min(1.0)),
                     noise::lerp(camera[2], 0.18, (gain * 0.25).min(1.0)),
                 ]
             }, // reset camera (/)
-            82 => boat.set_pos(Vector2::zeros()), // reset boat (r)
+            ResetBoat => boat.set_pos(Vector2::zeros()), // reset boat (r)
             ZoomIn => camera[2] *= 1.0 - 0.1*gain, // +
             ZoomOut => camera[2] *= 1.0 + 0.1*gain, // -
             RudderLeft => boat.theta -= gain*10.0, // A
@@ -139,9 +139,9 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
             AxisRudder => boat.theta += gain * (key[1] as f32 - 127.0) * 0.062, // analog rudder
             AxisPanY => camera[1] -= gain * (key[1] as f32 - 127.0) * 0.1 * camera[2], // pan[y]
             AxisPanX => camera[0] += gain * (key[1] as f32 - 127.0) * 0.1 * camera[2], // pan[x]
-            5 => boat.sail += gain * (key[1] as f32 - 127.0) * 0.0013, // sail
-            69 => boat.sail += gain * 0.062, // E
-            81 => boat.sail -= gain * 0.062, // Q
+            AxisSail => boat.sail += gain * (key[1] as f32 - 127.0) * 0.0013, // sail
+            RaiseSail => boat.sail += gain * 0.062, // E
+            LowerSail => boat.sail -= gain * 0.062, // Q
         }
     } 
     boat.sail = boat.sail.clamp(0.0, 1.5);
@@ -316,7 +316,34 @@ impl Boat {
     
 }
 
-#[derive(FromPrimitive)]
+impl TryFrom<u8> for Input {
+    type Error = &'static str;
+
+    fn try_from(input: u8) -> Result<Self, Self::Error> {
+        use Input::*;
+        match input {
+            38 => Ok(PanUp),
+            40 => Ok(PanDown),
+            37 => Ok(PanLeft),
+            39 => Ok(PanRight),
+            61 => Ok(ZoomIn),
+            173 => Ok(ZoomOut),
+            65 => Ok(RudderLeft),
+            68 => Ok(RudderRight),
+            69 => Ok(RaiseSail),
+            81 => Ok(LowerSail),
+            82 => Ok(ResetBoat),
+            191 => Ok(ResetCamera),
+            0 => Ok(AxisZoom),
+            1 => Ok(AxisRudder),
+            3 => Ok(AxisPanY),
+            4 => Ok(AxisPanX),
+            5 => Ok(AxisSail),
+            _ => Err("unmapped")
+        }
+    }
+    
+}
 #[repr(u8)]
 pub enum Input {
     /// Up Arrow
@@ -335,8 +362,17 @@ pub enum Input {
     RudderLeft = 65,
     /// D
     RudderRight = 68,
+    /// "/"
+    ResetCamera = 191,
+    /// R
+    ResetBoat = 82,
+    /// E
+    RaiseSail = 69,
+    /// Q
+    LowerSail = 81,
     AxisZoom = 0,
     AxisRudder = 1, 
     AxisPanY = 3, 
     AxisPanX = 4, 
+    AxisSail = 5,
 }
