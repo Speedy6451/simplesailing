@@ -4,10 +4,11 @@ var memory;
 var exports;
 const width = 160;
 const height = 144;
+const TIME_GAIN = 0.1; // game is unplayable at full speed with wasm refresh rates
 
 function blit_frame() {
-    // this has an insane performance impact, but it is required when using an
-    // allocator from wasm, as there is no way to update the internal pointer
+    // this is required when using an allocator from wasm as there is 
+    // no way to update the internal pointer when linear memory shifts
     image = new ImageData(
         new Uint8ClampedArray(
             memory.buffer,
@@ -17,7 +18,7 @@ function blit_frame() {
         width,
     );
 
-    ctx.putImageData(image, 0, 0, 0, 0, width-1, height-1);
+    ctx.putImageData(image, 0, 0);
 }
 
 function blit_text(text, len, x, y, size) {
@@ -77,7 +78,7 @@ async function init() {
         }
 
         const FRAME_TIME = new Float32Array(exports.memory.buffer, exports.LAST_FRAME_TIME, 1);
-        FRAME_TIME[0] = elapsed;
+        FRAME_TIME[0] = elapsed * TIME_GAIN;
 
         instance.exports.frame_entry();
 

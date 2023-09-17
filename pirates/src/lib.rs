@@ -111,8 +111,8 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     let mut camera = CAMERA.lock();
     let mut boat = BOAT.lock();
 
-    let gain = unsafe { // very much an approximation of constant-velocity animation
-        LAST_FRAME_TIME.min(100.0) / (1000.0 / 20.0) // normalize to 20fps, cap simulation at 10fps
+    let mut gain = unsafe { // very much an approximation of constant-velocity animation
+        LAST_FRAME_TIME / (1000.0 / 20.0) // normalize to 20fps, cap simulation at 10fps
     };
     while let Some(key) = INPUTS.lock().pop() {
         match key[0] { // [tag:input_handler]
@@ -141,25 +141,30 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     } 
 
     let wind = 0.0/RAD_TO_DEG;
-    let vel = boat.get_velocity(wind);
 
-    let camera_vec = Vector2::new(camera[0],camera[1]);
-    let boat_pos = boat.get_pos();
+    let step = 1.0; // 50ms
+    while gain > 0.0 { // when draw fps is low, physics will still run at a minimum of 20fps
+        gain -= step;
+        let gain = gain + step;
+        
+        let vel = boat.get_velocity(wind);
 
-    let depth = -sample_world(boat_pos+HALF, rand);
-    if depth < -0.04 {
-        boat.vel = 0.0;
-    } else if depth < 0.0 {
-        boat.vel *= 1.0 + (depth * gain * 30.2).min(0.0);
-    } 
+        let depth = -sample_world(boat.get_pos()+HALF, rand);
+        if depth < -0.04 {
+            boat.vel = 0.0;
+        } else if depth < 0.0 {
+            boat.vel *= 1.0 + (depth * gain * 30.2).min(0.0);
+        } 
 
-    if depth > -0.04 {
-        boat.vel = noise::lerp(boat.vel, vel * 0.82, 0.13 * gain);
-        boat.go(gain);
+        if depth > -0.04 {
+            boat.vel = noise::lerp(boat.vel, vel * 0.82, 0.13 * gain);
+            boat.go(gain);
+        }
     }
 
     // draw sea
     const HALF: Vector2<f32> = Vector2::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
+    let camera_vec = Vector2::new(camera[0],camera[1]);
 
     #[cfg(feature = "rayon")]
     let buffer_iter = buffer.par_iter_mut();
@@ -173,7 +178,7 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
         point -= HALF;
         point *= camera[2];
         point += HALF;
-        let n = sample_world(point+camera_vec+boat_pos, rand);
+        let n = sample_world(point+camera_vec+boat.get_pos(), rand);
         *pix.1 = 
         if n > 0.1 {
             let n = (n+0.1) * 300.0;
