@@ -1,9 +1,10 @@
 use std::time::SystemTime;
 use minifb::{Key, ScaleMode, Window, WindowOptions, Scale};
 extern crate pirates;
-use pirates::{WIDTH, HEIGHT};
+use pirates::{WIDTH, HEIGHT, Input};
 #[cfg(feature = "gilrs")]
 use gilrs::{Axis, Gilrs, Button};
+use pirates::Input::*;
 
 fn main() {
     #[cfg(feature = "gilrs")]
@@ -27,17 +28,17 @@ fn main() {
 
     let mut buffer: Vec<u32> = Vec::with_capacity(WIDTH * HEIGHT);
 
-    fn keyboard_input(key: u8) {
+    fn keyboard_input(key: Input) {
         unsafe {
-            pirates::KEYCODE[0] = key;
+            pirates::KEYCODE[0] = key as u8;
             pirates::keyboard_input();
         }
     }
 
-    fn analog_input(chan: u8, val: f32) {
+    fn analog_input(chan: Input, val: f32) {
         let val = (val * 127.0) as i8;
         unsafe {
-            pirates::KEYCODE[0] = chan;
+            pirates::KEYCODE[0] = chan as u8;
             pirates::KEYCODE[1] = (val + 127) as u8;
             pirates::keyboard_input();
         }
@@ -75,7 +76,7 @@ fn main() {
         if let Some(gamepad) = gamepad_handle.map(|h| gilrs.gamepad(h)) {
             // see [ref:input_handler] for mapping info
             gamepad.axis_data(Axis::LeftStickX).map(|axis| {
-                analog_input(1, axis.value());
+                analog_input(AxisRudder, axis.value());
             });
             if gamepad.is_pressed(Button::LeftTrigger) {
                 gamepad.axis_data(Axis::LeftStickY).map(|axis| {
@@ -90,14 +91,14 @@ fn main() {
             }
             if gamepad.is_pressed(Button::RightTrigger) {
                 gamepad.axis_data(Axis::RightStickY).map(|axis| {
-                    analog_input(3, axis.value());
+                    analog_input(AxisPanY, axis.value());
                 });
                 gamepad.axis_data(Axis::RightStickX).map(|axis| {
-                    analog_input(4, axis.value());
+                    analog_input(AxisPanX, axis.value());
                 });
             } else {
                 gamepad.axis_data(Axis::RightStickY).map(|axis| {
-                    analog_input(0, axis.value());
+                    analog_input(AxisZoom, axis.value());
                 });
             }
             if gamepad.is_pressed(Button::West) {
@@ -107,29 +108,29 @@ fn main() {
                 keyboard_input(82)
             }
             if gamepad.is_pressed(Button::DPadLeft) {
-                keyboard_input(65)
+                keyboard_input(PanLeft)
             }
             if gamepad.is_pressed(Button::DPadRight) {
-                keyboard_input(68)
+                keyboard_input(PanRight)
             }
             if gamepad.is_pressed(Button::DPadUp) {
-                keyboard_input(61)
+                keyboard_input(ZoomIn)
             }
             if gamepad.is_pressed(Button::DPadDown) {
-                keyboard_input(173)
+                keyboard_input(ZoomOut)
             }
         }
 
         // see [ref:input_handler] for mapping info
         window.get_keys().iter().for_each(|key| match key {
-            Key::A => keyboard_input(65),
-            Key::D => keyboard_input(68),
-            Key::Equal => keyboard_input(61),
-            Key::Minus => keyboard_input(173),
-            Key::Up => keyboard_input(38),
-            Key::Down => keyboard_input(40),
-            Key::Left => keyboard_input(37),
-            Key::Right => keyboard_input(39),
+            Key::A => keyboard_input(RudderLeft),
+            Key::D => keyboard_input(RudderRight),
+            Key::Equal => keyboard_input(ZoomIn),
+            Key::Minus => keyboard_input(ZoomOut),
+            Key::Up => keyboard_input(PanUp),
+            Key::Down => keyboard_input(PanDown),
+            Key::Left => keyboard_input(PanLeft),
+            Key::Right => keyboard_input(PanRight),
             Key::R => keyboard_input(82),
             Key::Slash => keyboard_input(191),
             Key::E => keyboard_input(69),

@@ -15,6 +15,8 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 extern crate alloc;
 use alloc::vec::Vec;
 use noise::PerlinBuf;
+use num_traits::FromPrimitive;
+use num_derive::FromPrimitive;
 use core::sync::atomic::{AtomicU32, Ordering};
 use libm;
 extern crate nalgebra as na;
@@ -115,11 +117,12 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
         LAST_FRAME_TIME / (1000.0 / 20.0) // normalize to 20fps, cap simulation at 10fps
     };
     while let Some(key) = INPUTS.lock().pop() {
-        match key[0] { // [tag:input_handler]
-            38 => camera[1] -= gain*10.0*camera[2], // up
-            40 => camera[1] += gain*10.0*camera[2], // down
-            37 => camera[0] -= gain*10.0*camera[2], // left
-            39 => camera[0] += gain*10.0*camera[2], // right
+        use Input::*;
+        match FromPrimitive::from_u32(key[0]).unwrap() { // [tag:input_handler]
+            PanUp => camera[1] -= gain*10.0*camera[2], // up
+            PanDown => camera[1] += gain*10.0*camera[2], // down
+            PanLeft => camera[0] -= gain*10.0*camera[2], // left
+            PanRight => camera[0] += gain*10.0*camera[2], // right
             191 => {
                 *camera = [
                     noise::lerp(camera[0], 0.00, (gain * 0.25).min(1.0)),
@@ -128,18 +131,17 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
                 ]
             }, // reset camera (/)
             82 => boat.set_pos(Vector2::zeros()), // reset boat (r)
-            61 => camera[2] *= 1.0 - 0.1*gain, // +
-            173 => camera[2] *= 1.0 + 0.1*gain, // -
-            65 => boat.theta -= gain*10.0, // A
-            68 => boat.theta += gain*10.0, // D
-            0 => camera[2] *= 1.0 - (key[1] as f32 - 127.0) * 0.0004 * gain, // analog zoom
-            1 => boat.theta += gain * (key[1] as f32 - 127.0) * 0.062, // analog rudder
-            3 => camera[1] -= gain * (key[1] as f32 - 127.0) * 0.1 * camera[2], // pan[y]
-            4 => camera[0] += gain * (key[1] as f32 - 127.0) * 0.1 * camera[2], // pan[x]
+            ZoomIn => camera[2] *= 1.0 - 0.1*gain, // +
+            ZoomOut => camera[2] *= 1.0 + 0.1*gain, // -
+            RudderLeft => boat.theta -= gain*10.0, // A
+            RudderRight => boat.theta += gain*10.0, // D
+            AxisZoom => camera[2] *= 1.0 - (key[1] as f32 - 127.0) * 0.0004 * gain, // analog zoom
+            AxisRudder => boat.theta += gain * (key[1] as f32 - 127.0) * 0.062, // analog rudder
+            AxisPanY => camera[1] -= gain * (key[1] as f32 - 127.0) * 0.1 * camera[2], // pan[y]
+            AxisPanX => camera[0] += gain * (key[1] as f32 - 127.0) * 0.1 * camera[2], // pan[x]
             5 => boat.sail += gain * (key[1] as f32 - 127.0) * 0.0013, // sail
             69 => boat.sail += gain * 0.062, // E
             81 => boat.sail -= gain * 0.062, // Q
-            _ => {}
         }
     } 
     boat.sail = boat.sail.clamp(0.0, 1.5);
@@ -312,4 +314,29 @@ impl Boat {
         self.set_pos(self.get_pos() + unit * -self.vel * gain);
     }
     
+}
+
+#[derive(FromPrimitive)]
+#[repr(u8)]
+pub enum Input {
+    /// Up Arrow
+    PanUp = 38,
+    /// Down Arrow
+    PanDown = 40,
+    /// Left Arrow
+    PanLeft = 37,
+    /// Right Arrow
+    PanRight = 39,
+    /// + 
+    ZoomIn = 61,
+    /// -
+    ZoomOut = 173,
+    /// A
+    RudderLeft = 65,
+    /// D
+    RudderRight = 68,
+    AxisZoom = 0,
+    AxisRudder = 1, 
+    AxisPanY = 3, 
+    AxisPanX = 4, 
 }
