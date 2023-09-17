@@ -136,9 +136,13 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
             1 => boat.theta += gain * (key[1] as f32 - 127.0) * 0.062, // analog rudder
             3 => camera[1] -= gain * (key[1] as f32 - 127.0) * 0.1 * camera[2], // pan[y]
             4 => camera[0] += gain * (key[1] as f32 - 127.0) * 0.1 * camera[2], // pan[x]
+            5 => boat.sail += gain * (key[1] as f32 - 127.0) * 0.0013, // sail
+            69 => boat.sail += gain * 0.062, // E
+            81 => boat.sail -= gain * 0.062, // Q
             _ => {}
         }
     } 
+    boat.sail = boat.sail.clamp(0.0, 1.5);
 
     let wind = 0.0/RAD_TO_DEG;
 

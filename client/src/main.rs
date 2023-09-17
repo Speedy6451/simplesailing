@@ -78,6 +78,17 @@ fn main() {
             gamepad.axis_data(Axis::LeftStickX).map(|axis| {
                 analog_input(1, axis.value());
             });
+            if gamepad.is_pressed(Button::LeftTrigger) {
+                gamepad.axis_data(Axis::LeftStickY).map(|axis| {
+                    analog_input(5, axis.value());
+                });
+            }
+            if gamepad.is_pressed(Button::South) {
+                keyboard_input(69)
+            }
+            if gamepad.is_pressed(Button::East) {
+                keyboard_input(81)
+            }
             if gamepad.is_pressed(Button::RightTrigger) {
                 gamepad.axis_data(Axis::RightStickY).map(|axis| {
                     analog_input(3, axis.value());
