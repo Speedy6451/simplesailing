@@ -4,8 +4,12 @@ members = [
 "client",
 ]
 
+[profile.release]
+lto = true
+opt-level = 3
+
 [profile.minsized]
 inherits = "release"
 lto = true
-opt-level = 'z'
+opt-level = 's'
 strip = true

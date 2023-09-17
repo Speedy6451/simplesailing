@@ -6,7 +6,18 @@ const width = 160;
 const height = 144;
 
 function blit_frame() {
-    ctx.putImageData(image, 0, 0);
+    // this has an insane performance impact, but it is required when using an
+    // allocator from wasm, as there is no way to update the internal pointer
+    image = new ImageData(
+        new Uint8ClampedArray(
+            memory.buffer,
+            exports.BUFFER.value,
+            4 * width * height,
+        ),
+        width,
+    );
+
+    ctx.putImageData(image, 0, 0, 0, 0, width-1, height-1);
 }
 
 function blit_text(text, len, x, y, size) {
@@ -47,21 +58,27 @@ async function init() {
     document.getElementById("body").onkeydown=keyboard_callback;
 
     memory = instance.exports.memory
-    const buffer_address = instance.exports.BUFFER.value;
-    image = new ImageData(
-        new Uint8ClampedArray(
-            memory.buffer,
-            buffer_address,
-            4 * width * height,
-        ),
-        width,
-    );
-
     instance.exports.frame_entry();
     ctx.textBaseline = 'top'
     ctx.textAlign = 'left';
 
-    const render = () => {
+    var last;
+    var elapsed;
+
+    const render = (time) => {
+        if(!last) { elapsed = 0; }
+        else {
+            elapsed = time-last;
+        }
+        last=time;
+
+        if(!elapsed) {
+            elapsed = 0.0;
+        }
+
+        const FRAME_TIME = new Float32Array(exports.memory.buffer, exports.LAST_FRAME_TIME, 1);
+        FRAME_TIME[0] = elapsed;
+
         instance.exports.frame_entry();
 
         requestAnimationFrame(render);

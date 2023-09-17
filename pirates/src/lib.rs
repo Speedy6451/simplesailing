@@ -46,6 +46,9 @@ pub const WIDTH: usize = 160;
 pub const HEIGHT: usize = 144;
 
 #[no_mangle]
+pub static mut LAST_FRAME_TIME: f32 = 0.0;
+
+#[no_mangle]
 pub static mut BUFFER: [u32; WIDTH * HEIGHT] = [0; WIDTH * HEIGHT];
 
 // hack, js -> rust ffi in weird shape without wasm_bindgen
@@ -75,7 +78,12 @@ static MAP: [u8; MAP_WIDTH * MAP_HEIGHT] = [ // should deflate to smaller than b
 
 static CAMERA: Mutex<[f32; 3]> = Mutex::new([0.0, 0.0, 0.18]);
 
-static BOAT: Mutex<Boat> = Mutex::new(Boat { x: 0.0, y: 0.0, theta: 0.0, vel: 0.0 });
+static BOAT: Mutex<Boat> = Mutex::new(Boat {
+    x: 0.0, y: 0.0,
+    theta: 0.0,
+    vel: 0.0,
+    sail: 1.0,
+});
 
 #[no_mangle]
 pub unsafe extern fn keyboard_input() {
@@ -103,24 +111,31 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     let mut camera = CAMERA.lock();
     let mut boat = BOAT.lock();
 
-    //camera[0] += 1.0;
-
+    let gain = unsafe { // very much an approximation of constant-velocity animation
+        LAST_FRAME_TIME.min(100.0) / (1000.0 / 20.0) // normalize to 20fps, cap simulation at 10fps
+    };
     while let Some(key) = INPUTS.lock().pop() {
         match key[0] { // [tag:input_handler]
-            38 => camera[1] -= 10.0*camera[2], // up
-            40 => camera[1] += 10.0*camera[2], // down
-            37 => camera[0] -= 10.0*camera[2], // left
-            39 => camera[0] += 10.0*camera[2], // right
-            191 => *camera = [0.0, 0.0, 0.18], // reset camera (/)
+            38 => camera[1] -= gain*10.0*camera[2], // up
+            40 => camera[1] += gain*10.0*camera[2], // down
+            37 => camera[0] -= gain*10.0*camera[2], // left
+            39 => camera[0] += gain*10.0*camera[2], // right
+            191 => {
+                *camera = [
+                    noise::lerp(camera[0], 0.00, (gain * 0.25).min(1.0)),
+                    noise::lerp(camera[1], 0.00, (gain * 0.25).min(1.0)),
+                    noise::lerp(camera[2], 0.18, (gain * 0.25).min(1.0)),
+                ]
+            }, // reset camera (/)
             82 => boat.set_pos(Vector2::zeros()), // reset boat (r)
-            61 => camera[2] *= 0.9, // +
-            173 => camera[2] *= 1.1, // -
-            65 => boat.theta -= 10.0, // A
-            68 => boat.theta += 10.0, // D
-            0 => camera[2] *= 1.0 - (key[1] as f32 - 127.0) * 0.0004, // analog zoom
-            1 => boat.theta += (key[1] as f32 - 127.0) * 0.031, // analog rudder
-            3 => camera[1] -= (key[1] as f32 - 127.0) * 0.004, // pan[y]
-            4 => camera[0] += (key[1] as f32 - 127.0) * 0.004, // pan[x]
+            61 => camera[2] *= 1.0 - 0.1*gain, // +
+            173 => camera[2] *= 1.0 + 0.1*gain, // -
+            65 => boat.theta -= gain*10.0, // A
+            68 => boat.theta += gain*10.0, // D
+            0 => camera[2] *= 1.0 - (key[1] as f32 - 127.0) * 0.0004 * gain, // analog zoom
+            1 => boat.theta += gain * (key[1] as f32 - 127.0) * 0.062, // analog rudder
+            3 => camera[1] -= gain * (key[1] as f32 - 127.0) * 0.1 * camera[2], // pan[y]
+            4 => camera[0] += gain * (key[1] as f32 - 127.0) * 0.1 * camera[2], // pan[x]
             _ => {}
         }
     } 
@@ -135,11 +150,12 @@ fn render_frame(buffer: &mut [u32; WIDTH*HEIGHT]) {
     if depth < -0.04 {
         boat.vel = 0.0;
     } else if depth < 0.0 {
-        boat.vel *= (1.0 - depth) * 0.25;
+        boat.vel *= 1.0 + (depth * gain * 30.2).min(0.0);
     } 
 
     if depth > -0.04 {
-        boat.go_smooth(-vel * 0.42);
+        boat.vel = noise::lerp(boat.vel, vel * 0.82, 0.13 * gain);
+        boat.go(gain);
     }
 
     // draw sea
@@ -256,6 +272,8 @@ struct Boat {
     y: f32,
     theta: f32,
     vel: f32,
+    /// sail height 0-1
+    sail: f32,
 }
 
 impl Boat {
@@ -269,26 +287,20 @@ impl Boat {
     }
 
     fn get_intensity(self: &Self, wind_direction: f32) -> f32 {
-        libm::sinf((self.theta-wind_direction)/RAD_TO_DEG)
+        libm::sinf((self.theta-wind_direction)/RAD_TO_DEG) * self.sail
     }
 
     fn get_velocity(self: &Self, wind_direction: f32) -> f32 {
         libm::fabsf(self.get_intensity(wind_direction))
     }
 
-    fn go_smooth(self: &mut Self, vel: f32) {
-        self.vel = noise::lerp(self.vel, vel, 0.09);
-
-        self.go(self.vel);
-    }
-
-    fn go(self: &mut Self, velocity: f32) {
+    fn go(self: &mut Self, gain: f32) {
         let cos = libm::cosf((self.theta+ 45.0)/RAD_TO_DEG);
         let sin = libm::sinf((self.theta+ 45.0)/RAD_TO_DEG);
         let unit = Vector2::new(
             cos - sin,
             sin + cos);
-        self.set_pos(self.get_pos() + unit * velocity);
+        self.set_pos(self.get_pos() + unit * -self.vel * gain);
     }
     
 }

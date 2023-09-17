@@ -7,10 +7,6 @@ edition = "2021"
 default = ["wasm"]
 wasm = ["wee_alloc"]
 
-[profile.release]
-lto = true
-opt-level = 's'
-
 [lib]
 crate-type = ["lib", "cdylib"]
 

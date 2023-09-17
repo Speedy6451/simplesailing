@@ -1,3 +1,5 @@
+use std::time::{Duration, SystemTime};
+
 use minifb::{Key, ScaleMode, Window, WindowOptions, Scale};
 extern crate pirates;
 use pirates::{WIDTH, HEIGHT};
@@ -45,9 +47,16 @@ fn main() {
     #[cfg(feature = "gamepad")]
     let mut gamepad_handle = None;
 
+    let mut frame_start: SystemTime = SystemTime::now();
+
     while window.is_open() && !window.is_key_down(Key::Escape) {
+        let last_frame = frame_start.elapsed().unwrap().as_micros();
+        frame_start = SystemTime::now();
+
         buffer.clear();
         unsafe {
+            pirates::LAST_FRAME_TIME = last_frame as f32 / 1000.0;
+
             pirates::frame_entry();
             for pix in pirates::BUFFER {
                 // AABBGGRR to 00RRGGBB 
