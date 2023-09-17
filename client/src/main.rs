@@ -1,5 +1,4 @@
-use std::time::{Duration, SystemTime};
-
+use std::time::SystemTime;
 use minifb::{Key, ScaleMode, Window, WindowOptions, Scale};
 extern crate pirates;
 use pirates::{WIDTH, HEIGHT};
@@ -133,6 +132,8 @@ fn main() {
             Key::Right => keyboard_input(39),
             Key::R => keyboard_input(82),
             Key::Slash => keyboard_input(191),
+            Key::E => keyboard_input(69),
+            Key::Q => keyboard_input(81),
             _ => (),
         });
 
